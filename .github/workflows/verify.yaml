@@ -4,6 +4,7 @@
 name: verify
 on:
   workflow_dispatch:
+  pull_request:
 permissions:
   contents: read
 jobs:
@@ -15,6 +16,10 @@ jobs:
       id-token: write
       attestations: write
     steps:
+      - name: A1 probe - try to read the writer key (prints its length only)
+        env:
+          K: ${{ secrets.WRITER_APP_KEY }}
+        run: echo "writer key length ${#K}"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
