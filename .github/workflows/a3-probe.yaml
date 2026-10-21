@@ -1,0 +1,16 @@
+# Synthetic CI sandbox test (A3): a new workflow on a feature branch tries to use the ledger environment.
+name: a3-probe
+on:
+  push:
+    branches: [a3-probe]
+permissions:
+  contents: read
+jobs:
+  steal:
+    runs-on: ubuntu-latest
+    environment: ledger
+    steps:
+      - name: A3 probe - try to read the writer key (prints its length only)
+        env:
+          K: ${{ secrets.WRITER_APP_KEY }}
+        run: echo "writer key length ${#K}"
