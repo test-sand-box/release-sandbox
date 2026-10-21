@@ -1,0 +1,38 @@
+# Synthetic CI sandbox test. Writes one non-authoritative record to the ledger branch as the writer App,
+# then attests the record file to this run. The writer key lives only in the "ledger" environment,
+# whose deployment branch policy admits main only.
+name: verify
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    environment: ledger
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: writer
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.WRITER_APP_ID }}
+          private-key: ${{ secrets.WRITER_APP_KEY }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+      - name: Build record
+        run: node .github/ledger/make-record.mjs record.json predicate.json pass
+      - name: Write record (create-only)
+        env:
+          GH_TOKEN: ${{ steps.writer.outputs.token }}
+        run: node .github/ledger/write.mjs record.json
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: record.json
+          predicate-type: https://example.invalid/ledger-binding/v1
+          predicate-path: predicate.json

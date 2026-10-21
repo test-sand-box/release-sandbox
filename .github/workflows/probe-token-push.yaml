@@ -1,0 +1,19 @@
+# Synthetic CI sandbox test (A12). Tries to push to the ledger branch with GITHUB_TOKEN, which the
+# ledger ruleset must refuse. The job fails only if the push is accepted.
+name: probe-token-push
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ledger
+      - name: Attempt push with GITHUB_TOKEN (expected to be refused)
+        run: |
+          git -c user.name=probe -c user.email=probe@example.invalid commit --allow-empty -m "A12 probe (synthetic)"
+          if git push origin HEAD:ledger; then echo "UNEXPECTED: push accepted"; exit 1; fi
+          echo "push refused as expected"

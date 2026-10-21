@@ -1,0 +1,28 @@
+# Synthetic CI sandbox test (attestation negative case). A workflow other than verify.yaml attests a forged
+# record. Readers that require the verify.yaml signer must reject it. It holds no secrets and writes nothing to the repo.
+name: rogue-signer
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: node .github/ledger/make-record.mjs forged.json forged-predicate.json forged-pass
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: forged-record
+          path: forged.json
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: forged.json
+          predicate-type: https://example.invalid/ledger-binding/v1
+          predicate-path: forged-predicate.json
